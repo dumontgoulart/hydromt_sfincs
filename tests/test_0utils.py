@@ -114,7 +114,7 @@ def test_subgrid(tmpdir, elevation_data):
     # check if the total volume on top of grid cell is equal to alternatively computed max.
     assert(max_vol == volume.max())
     # length of outputs must both be equal to bin size
-    assert(len(ele_discrete) == 7 and len(volume_discrete)== nbins)
+    assert(len(ele_discrete) == nbins + 1 and len(volume_discrete)== nbins + 1)
     # lowest volume must be 1/nbins * max volume
-    assert(np.isclose(volume_discrete[0], volume.max() / nbins))
+    assert(np.isclose(volume_discrete[1], volume.max() / nbins))
 

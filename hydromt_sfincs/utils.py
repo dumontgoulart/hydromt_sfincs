@@ -757,7 +757,7 @@ def subgrid_volume_level(elevation, dx, dy):
     return ele_sort, V
 
 # @njit
-def subgrid_volume_discrete(ele_sort, volume, nbins=5):
+def subgrid_volume_discrete(ele_sort, volume, dx, dy, nbins=5, min_gradient=0.2):
     """
     Derive a discrete hypsometry over nbins points from a full hypsometry cdf
 
@@ -775,7 +775,19 @@ def subgrid_volume_discrete(ele_sort, volume, nbins=5):
     volume_discrete: np.ndarray (float, size nbins): discretely sampled volumes (equidistant until maximum volume) in grid cell [m3]
 
     """
-    steps = (np.arange(nbins)+1)/nbins
+    steps = np.arange(nbins+1)/nbins
     volume_discrete = steps*volume.max()
     ele_discrete = interp1d(volume, ele_sort)(volume_discrete)
+    # TODO: check if volume change with elevation is below min_gradient
+
+    # change in level per unit of volume (m/m)
+    dz = np.diff(ele_discrete)
+    # change in volume (normalized to meters)
+    dh = np.diff(volume_discrete) / (dx * dy)
+    dhdz = dh / dz
+    while dhdz.min() < min_gradient:
+        # reshape until gradient is satisfactory
+        print("gradient corrections still need to be implemented")
+        raise NotImplementedError
+
     return ele_discrete, volume_discrete
