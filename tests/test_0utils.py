@@ -95,3 +95,26 @@ def test_structures(tmpdir, weirs):
     weirs[1]["name"] = "WEIR02"  # a name is added when writing the file
     for i in range(len(weirs)):
         assert sorted(weirs2[i].items()) == sorted(weirs[i].items())
+
+
+def test_subgrid(tmpdir, elevation_data):
+    nbins = 7
+    # make some elevation data
+    xi = elevation_data["xi"]
+    yi = elevation_data["yi"]
+    ele = elevation_data["elevation"]
+    dx = np.diff(xi[0]).max()
+    dy = np.diff(yi[:, 0]).max()
+    ele_sort, volume = utils.subgrid_volume_level(ele, dx, dy)
+    ele_discrete, volume_discrete = utils.subgrid_volume_discrete(ele_sort, volume, nbins=nbins)
+    assert(len(volume)==len(ele.flatten()))
+    depths = ele - ele.min()
+    # compute maximum volume by simple addition, and check against highest value in volume
+    max_vol = ((depths.max() - depths) * 100).sum()
+    # check if the total volume on top of grid cell is equal to alternatively computed max.
+    assert(max_vol == volume.max())
+    # length of outputs must both be equal to bin size
+    assert(len(ele_discrete) == 7 and len(volume_discrete)== nbins)
+    # lowest volume must be 1/nbins * max volume
+    assert(np.isclose(volume_discrete[0], volume.max() / nbins))
+

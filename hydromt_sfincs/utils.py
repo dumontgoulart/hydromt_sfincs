@@ -7,6 +7,7 @@ import pandas as pd
 import geopandas as gpd
 from datetime import datetime
 from configparser import ConfigParser
+from scipy.interpolate import interp1d
 from shapely.geometry import LineString
 from typing import List, Dict, Union, Tuple
 from pathlib import Path
@@ -16,6 +17,7 @@ import logging
 import hydromt
 from hydromt.io import write_xy
 from scipy import ndimage
+from numba import njit
 
 __all__ = [
     "read_inp",
@@ -727,3 +729,53 @@ def read_sfincs_his_results(
     ds_his.vector.set_crs(crs)
 
     return ds_his
+
+# @njit
+def subgrid_volume_level(elevation, dx, dy):
+    """
+    map vector of elevation values into a hypsometric volume - depth relationship for one grid cell
+
+    Parameters
+    ----------
+    elevation : np.ndarray (nr of pixels in one cell) containing subgrid elevation values for one grid cell [m]
+    dx: float, x-directional cell size (typically not known at this level) [m]
+    dy: float, y-directional cell size (typically not known at this level) [m]
+
+    Return
+    ------
+    ele_sort : np.ndarray (1D flattened from elevation) with sorted and flattened elevation values
+    volume : np.ndarray (1D flattened from elevation) containing volumes (lowest value zero) per sorted elevation value
+
+    """
+
+    ele_sort = np.sort(elevation.flatten())
+    depth = ele_sort - ele_sort.min()
+
+    V = np.cumsum((np.diff(depth) * dx * dy) * np.arange(len(depth))[1:])
+    # add trailing zero for first value
+    V = np.concatenate([np.array([0]), V])
+    return ele_sort, V
+
+# @njit
+def subgrid_volume_discrete(ele_sort, volume, nbins=5):
+    """
+    Derive a discrete hypsometry over nbins points from a full hypsometry cdf
+
+    Parameters
+    ----------
+    ele_sort : np.ndarray (float) sorted elevation values in grid cell
+    volume : np.ndarray (float) sorted volume values in grid cell belonging to ele_sort values
+    nbins : int, number of bins to split the hypsometry in. volume is used as equidistant, [-], default: 5, the
+        resampling is done such that if nbins=5, the lowest volume selected will be 0.2*maximum volume, and highest is
+        equal to the maximum volume
+
+    Returns
+    -------
+    ele_discrete: np.ndarray (float, size nbins): discretely sampled elevation (interpolated from volume - elevation relationship) in grid cell [m]
+    volume_discrete: np.ndarray (float, size nbins): discretely sampled volumes (equidistant until maximum volume) in grid cell [m3]
+
+    """
+    steps = (np.arange(nbins)+1)/nbins
+    volume_discrete = steps*volume.max()
+    ele_discrete = interp1d(volume, ele_sort)(volume_discrete)
+    return ele_discrete, volume_discrete

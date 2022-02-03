@@ -1,7 +1,7 @@
 """add global fixtures"""
 
 import pytest
-
+import numpy as np
 
 @pytest.fixture
 def weirs():
@@ -21,3 +21,19 @@ def weirs():
         },
     ]
     return feats
+
+@pytest.fixture
+def elevation_data():
+    # make coordinates
+    xi, yi = np.meshgrid(np.linspace(0, 100, 11), np.linspace(0, 100, 11) + 10)
+    # make some variables scaled from zero to 2*pi
+    x_var = (xi - xi.min()) / (xi.max() - xi.min()) * 2 * np.pi
+    y_var = (yi - yi.min()) / (yi.max() - yi.min()) * 2 * np.pi
+    # random goniometrics to make elevation values (including some
+    elevation = -3 * np.cos(x_var) ** 2 + 5 * np.arctan(y_var) ** 2 + 2 * np.sin(x_var * y_var)
+    data = {
+        "xi": xi,
+        "yi": yi,
+        "elevation": elevation,
+    }
+    return data
