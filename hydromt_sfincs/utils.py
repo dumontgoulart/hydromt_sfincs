@@ -775,19 +775,24 @@ def subgrid_volume_discrete(ele_sort, volume, dx, dy, nbins=5, min_gradient=0.2)
     volume_discrete: np.ndarray (float, size nbins): discretely sampled volumes (equidistant until maximum volume) in grid cell [m3]
 
     """
+    def get_dhdz(z, V, dx, dy):
+        # change in level per unit of volume (m/m)
+        dz = np.diff(z)
+        # change in volume (normalized to meters)
+        dh = np.diff(V) / (dx * dy)
+        return dh / dz
+
     steps = np.arange(nbins+1)/nbins
-    volume_discrete = steps*volume.max()
-    ele_discrete = interp1d(volume, ele_sort)(volume_discrete)
+    V = steps*volume.max()
+    z = interp1d(volume, ele_sort)(V)
     # TODO: check if volume change with elevation is below min_gradient
-
-    # change in level per unit of volume (m/m)
-    dz = np.diff(ele_discrete)
-    # change in volume (normalized to meters)
-    dh = np.diff(volume_discrete) / (dx * dy)
-    dhdz = dh / dz
-    while dhdz.min() < min_gradient:
+    dhdz = get_dhdz(z, V, dx, dy)
+    n = 0
+    while ((dhdz.min() < min_gradient and not(np.isclose(dhdz.min(), min_gradient))) and n < nbins):
         # reshape until gradient is satisfactory
-        print("gradient corrections still need to be implemented")
-        raise NotImplementedError
+        idx = np.where(dhdz == dhdz.min())[0]
+        V[idx + 1] = V[idx] + min_gradient*np.diff(z)[idx]*dy*dx
+        dhdz = get_dhdz(z, V, dx, dy)
+        n += 1
+    return z, V
 
-    return ele_discrete, volume_discrete
