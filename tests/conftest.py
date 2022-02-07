@@ -37,3 +37,14 @@ def elevation_data():
         "elevation": elevation,
     }
     return data
+
+@pytest.fixture
+def manning_data():
+    xi, yi = np.meshgrid(np.linspace(0, 100, 11), np.linspace(0, 100, 11) + 10)
+    manning = np.ones(xi.shape)*0.07 + xi/7000 - yi/8000
+    data = {
+        "xi": xi,
+        "yi": yi,
+        "manning": manning
+    }
+    return data

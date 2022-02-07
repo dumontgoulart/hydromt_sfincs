@@ -759,7 +759,7 @@ def subgrid_volume_level(elevation, dx, dy):
 # @njit
 def subgrid_volume_discrete(ele_sort, volume, dx, dy, nbins=5, min_gradient=0.2):
     """
-    Derive a discrete hypsometry over nbins points from a full hypsometry cdf
+    Derive a discrete volume hypsometry over nbins points from a full hypsometry cdf
 
     Parameters
     ----------
@@ -796,3 +796,71 @@ def subgrid_volume_discrete(ele_sort, volume, dx, dy, nbins=5, min_gradient=0.2)
         n += 1
     return z, V
 
+
+def subgrid_R_table(elevation, manning, dx, dy):
+    """
+    map vector of elevation values into a hypsometric hydraulic radius - depth relationship for one grid cell
+
+
+    Parameters
+    ----------
+    elevation : np.ndarray (nr of pixels in one cell) containing subgrid elevation values for one grid cell [m]
+    manning : np.ndarray (nr of pixels in one cell) containing subgrid manning roughness values for one grid cell [s m^(-1/3)]
+    dx : float, x-directional cell size (typically not known at this level) [m]
+    dy : float, y-directional cell size (typically not known at this level) [m]
+
+    Returns
+    -------
+    ele_sort, R : np.ndarray of sorted elevation values, np.ndarray of sorted hydraulic radii that belong with depth
+    """
+
+    if isinstance(manning, np.ndarray):
+        manning = manning.flatten()
+    elevation = elevation.flatten()
+    assert (len(manning) == len(
+        elevation)), "Amount of elevation samples ({len(ele_sort)}) is not equal to amount of Manning samples ({len(manning)})"
+    cell_width = (dy + dx) / 2
+    idx = np.argsort(elevation)
+    ele_sort = elevation[idx]
+    manning_sort = manning[idx]
+    # compute average manning per sorted elevation value
+    manning_avg = np.cumsum(manning_sort) / (1 + np.arange(len(manning_sort)))
+
+    depth = ele_sort - ele_sort.min()  # - ele_sort.min()
+    A = np.cumsum((np.diff(depth, prepend=0.) * cell_width) * np.arange(len(depth)))
+    P = np.cumsum((np.diff(depth, prepend=0.) ** 2 + cell_width ** 2) ** 0.5)
+    R = A / P
+    return ele_sort, R
+
+def subgrid_R_discrete(ele_sort, R, nbins=5):
+    """
+    Derive a discrete volume hypsometry over nbins points from a full hypsometry cdf
+
+    Parameters
+    ----------
+    ele_sort : np.ndarray (float) sorted elevation values in grid cell
+    R : np.ndarray of sorted hydraulic radii that belong with depth
+    nbins : int, number of bins to split the hypsometry in. elevation is used as equidistant, [-], default: 5, the
+        resampling is done such that if nbins=5, the lowest volume selected will be minimum elevation + 0.*elevation
+        range, and highest is minimum elevation + 1*elevation range
+
+    Returns
+    -------
+    ele_discrete: np.ndarray (float, size nbins): discretely sampled elevation (interpolated from volume - elevation relationship) in grid cell [m]
+    volume_discrete: np.ndarray (float, size nbins): discretely sampled volumes (equidistant until maximum volume) in grid cell [m3]
+
+    Parameters
+    ----------
+    ele_sort
+    R
+    nbins
+
+    Returns
+    -------
+
+    """
+    # extract discrete values
+    steps = np.arange(0, nbins + 1)/nbins
+    ele_discrete = ele_sort.min()+(ele_sort.ptp()*steps)
+    R_discrete = interp1d(ele_sort, R)(ele_discrete)
+    return ele_discrete, R_discrete

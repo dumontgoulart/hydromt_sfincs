@@ -97,7 +97,7 @@ def test_structures(tmpdir, weirs):
         assert sorted(weirs2[i].items()) == sorted(weirs[i].items())
 
 
-def test_subgrid(tmpdir, elevation_data):
+def test_subgrid_volume(tmpdir, elevation_data):
     nbins = 7
     # make some elevation data
     xi = elevation_data["xi"]
@@ -119,3 +119,17 @@ def test_subgrid(tmpdir, elevation_data):
     assert(np.isclose(volume_discrete[0], 0.))
     assert(np.isclose(volume_discrete[1], volume.max() / nbins))
 
+def test_subgrid_depth(tmpdir, elevation_data, manning_data):
+    nbins = 9
+    xi = elevation_data["xi"]
+    yi = elevation_data["yi"]
+    ele = elevation_data["elevation"]
+    manning = manning_data["manning"]
+    dx = np.diff(xi[0]).max()
+    dy = np.diff(yi[:, 0]).max()
+    ele_sort, R = utils.subgrid_R_table(ele, manning, dx, dy)
+    ele_discrete, R_discrete = utils.subgrid_R_discrete(ele_sort, R, nbins=nbins)
+    assert(np.isclose(R_discrete[0], 0.)), f"First hydraulic radius is not zero, but {R_discrete[0]}"
+    assert(np.isclose(ele_discrete[1], ele_sort.min()+ele_sort.ptp()/nbins)), f"Expected second elevation is {ele_sort.min()+ele_sort.ptp()/nbins}, instead found {ele_discrete[1]}"
+    assert(len(ele_discrete) == nbins + 1), f"Length of discrete elevations should be nbins + 1: {nbins} but is {len(ele_discrete)}"
+    assert(len(R_discrete) == nbins + 1), f"Length of discrete R values should be nbins + 1: {nbins} but is {len(ele_discrete)}"
