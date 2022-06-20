@@ -10,15 +10,20 @@ from rasterio.warp import transform_bounds
 from shapely.geometry import box
 import pandas as pd
 import xarray as xr
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Union
 from scipy import ndimage
 
 import hydromt
 from hydromt.models.model_api import Model
 from hydromt.vector import GeoDataArray
 from hydromt.raster import RasterDataset, RasterDataArray
+from pathlib import Path
 
 from . import workflows, utils, plots, DATADIR
+
+RasterDatasetSource = Union[str, Path]
+GeoDatasetSource = Union[str, Path]
+GeoDataframeSource = Union[str, Path]
 
 __all__ = ["SfincsModel"]
 
@@ -137,7 +142,7 @@ class SfincsModel(Model):
 
     def setup_topobathy(
         self,
-        topobathy_fn,
+        topobathy_fn: RasterDatasetSource,
         res=100,
         crs="utm",
         reproj_method="bilinear",
@@ -215,7 +220,7 @@ class SfincsModel(Model):
 
     def setup_merge_topobathy(
         self,
-        topobathy_fn,
+        topobathy_fn: RasterDatasetSource,
         elv_min=None,
         elv_max=None,
         mask_fn=None,
@@ -324,9 +329,9 @@ class SfincsModel(Model):
 
     def setup_mask(
         self,
-        mask_fn=None,
-        include_mask_fn=None,
-        exclude_mask_fn=None,
+        mask_fn: GeoDatasetSource = None,
+        include_mask_fn: GeoDatasetSource = None,
+        exclude_mask_fn: GeoDatasetSource = None,
         elv_min=None,
         elv_max=None,
         fill_area=10,
@@ -430,9 +435,9 @@ class SfincsModel(Model):
     def setup_bounds(
         self,
         btype="waterlevel",
-        mask_fn=None,
-        include_mask_fn=None,
-        exclude_mask_fn=None,
+        mask_fn: GeoDatasetSource = None,
+        include_mask_fn: GeoDatasetSource = None,
+        exclude_mask_fn: GeoDatasetSource = None,
         elv_min=None,
         elv_max=None,
         mask_buffer=0,
@@ -528,7 +533,7 @@ class SfincsModel(Model):
                 f"{ncells:d} {btype} (mask={bvalue:d}) boundary cells set."
             )
 
-    def setup_river_hydrography(self, hydrography_fn=None, adjust_dem=False, **kwargs):
+    def setup_river_hydrography(self, hydrography_fn: RasterDatasetSource = None, adjust_dem=False, **kwargs):
         """Setup hydrography layers for flow directions ("flwdir") and upstream area
         ("uparea") which are required to setup the setup_river* model components.
 
@@ -607,9 +612,9 @@ class SfincsModel(Model):
 
     def setup_river_bathymetry(
         self,
-        river_geom_fn=None,
-        river_mask_fn=None,
-        qbankfull_fn=None,
+        river_geom_fn: GeoDatasetSource = None,
+        river_mask_fn: RasterDatasetSource = None,
+        qbankfull_fn: GeoDatasetSource=None,
         rivdph_method="gvf",
         rivwth_method="geom",
         river_upa=25.0,
@@ -821,7 +826,7 @@ class SfincsModel(Model):
 
     def setup_river_inflow(
         self,
-        hydrography_fn=None,
+        hydrography_fn: RasterDatasetSource = None,
         river_upa=25.0,
         river_len=1e3,
         river_width=2e3,
@@ -924,7 +929,7 @@ class SfincsModel(Model):
 
     def setup_river_outflow(
         self,
-        hydrography_fn=None,
+        hydrography_fn: RasterDatasetSource = None,
         river_upa=25.0,
         river_len=1e3,
         river_width=2e3,
@@ -1049,7 +1054,7 @@ class SfincsModel(Model):
             gdf_riv.index = gdf_riv.index.values + 1  # one based index
             self.set_staticgeoms(gdf_riv, name="rivers_out")
 
-    def setup_cn_infiltration(self, cn_fn="gcn250", antecedent_runoff_conditions="avg"):
+    def setup_cn_infiltration(self, cn_fn: RasterDatasetSource = "gcn250", antecedent_runoff_conditions="avg"):
         """Setup model potential maximum soil moisture retention map (scsfile)
         from gridded curve number map.
 
@@ -1096,7 +1101,7 @@ class SfincsModel(Model):
 
     def setup_manning_roughness(
         self,
-        lulc_fn=None,
+        lulc_fn: RasterDatasetSource = None,
         map_fn=None,
         riv_man=0.03,
         lnd_man=0.1,
@@ -1168,7 +1173,7 @@ class SfincsModel(Model):
             self.config.pop(v, None)
         self.set_config(f"{mname}file", f"sfincs.{mname[:3]}")
 
-    def setup_gauges(self, gauges_fn, overwrite=False, **kwargs):
+    def setup_gauges(self, gauges_fn: GeoDatasetSource, overwrite=False, **kwargs):
         """Setup model observation point locations.
 
         Adds model layers:
@@ -1198,7 +1203,7 @@ class SfincsModel(Model):
         self.logger.info(f"{name} set based on {gauges_fn}")
 
     def setup_structures(
-        self, structures_fn, stype, dz=None, overwrite=False, **kwargs
+        self, structures_fn: GeoDatasetSource, stype, dz=None, overwrite=False, **kwargs
     ):
         """Setup thin dam or weir structures.
 
@@ -1259,9 +1264,9 @@ class SfincsModel(Model):
     ### FORCING
     def setup_h_forcing(
         self,
-        geodataset_fn=None,
+        geodataset_fn: GeoDatasetSource = None,
         timeseries_fn=None,
-        offset_fn=None,
+        offset_fn: RasterDatasetSource = None,
         buffer=5e3,
         **kwargs,
     ):
@@ -1366,7 +1371,7 @@ class SfincsModel(Model):
             self.logger.debug(f"{name} forcing: applied MDT (avg: {mdt_avg:+.2f})")
         self.set_forcing_1d(ts=da, name=name)
 
-    def setup_q_forcing(self, geodataset_fn=None, timeseries_fn=None, **kwargs):
+    def setup_q_forcing(self, geodataset_fn: RasterDatasetSource = None, timeseries_fn=None, **kwargs):
         """Setup discharge boundary point locations (src) and time series (dis).
 
         Use `geodataset_fn` to set the discharge boundary from a dataset of point location
@@ -1440,9 +1445,9 @@ class SfincsModel(Model):
 
     def setup_q_forcing_from_grid(
         self,
-        discharge_fn,
-        locs_fn=None,
-        uparea_fn=None,
+        discharge_fn: RasterDatasetSource,
+        locs_fn: GeoDatasetSource = None,
+        uparea_fn: RasterDatasetSource = None,
         wdw=1,
         rel_error=0.05,
         abs_error=50,
@@ -1553,7 +1558,7 @@ class SfincsModel(Model):
         )
 
     def setup_p_forcing_from_grid(
-        self, precip_fn=None, dst_res=None, aggregate=False, **kwargs
+        self, precip_fn: RasterDatasetSource = None, dst_res=None, aggregate=False, **kwargs
     ):
         """Setup precipitation forcing from a gridded spatially varying data source.
 
@@ -2136,8 +2141,8 @@ class SfincsModel(Model):
         self,
         chunksize=100,
         drop=["crs", "sfincsgrid"],
-        fn_map="sfincs_map.nc",
-        fn_his="sfincs_his.nc",
+        fn_map: RasterDatasetSource = "sfincs_map.nc",
+        fn_his: RasterDatasetSource = "sfincs_his.nc",
         **kwargs,
     ):
         """Read results from sfincs_map.nc and sfincs_his.nc and save to the `results` attribute.
