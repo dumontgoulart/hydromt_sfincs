@@ -1,0 +1,99 @@
+dtu10mdt_egm96:
+  crs: 4326
+  data_type: RasterDataset
+  driver: raster
+  meta:
+    category: topography
+    paper_doi: 10.1029/2008JC005179
+    paper_ref: Andersen and Knudsen (2009)
+    source_url: https://www.space.dtu.dk/english/research/scientific_data_and_models/global_mean_dynamic_topography
+    source_version: 2010
+    unit: m+EGM96
+  path: C:\Users\morenodu\.hydromt_data\artifact_data\v0.0.6\dtu10mdt_egm96.tif
+era5_hourly:
+  crs: 4326
+  data_type: RasterDataset
+  driver: netcdf
+  meta:
+    category: meteo
+    history: Extracted from Copernicus Climate Data Store
+    paper_doi: 10.1002/qj.3803
+    paper_ref: Hersbach et al. (2019)
+    source_license: https://cds.climate.copernicus.eu/cdsapp/#!/terms/licence-to-use-copernicus-products
+    source_url: https://doi.org/10.24381/cds.bd0915c6
+    source_version: ERA5 hourly data on pressure levels
+  path: C:\Users\morenodu\.hydromt_data\artifact_data\v0.0.6\era5_hourly.nc
+  unit_add:
+    temp: -273.15
+  unit_mult:
+    kin: 0.000277778
+    kout: 0.000277778
+    precip: 1000
+    press_msl: 0.01
+gcn250:
+  data_type: RasterDataset
+  driver: raster
+  meta:
+    category: soil
+    paper_doi: 10.1038/s41597-019-0155-x
+    paper_ref: Jaafar et al. (2019)
+    source_license: CC BY 4.0
+    source_url: https://doi.org/10.6084/m9.figshare.7756202.v1
+    source_version: v1
+  nodata: 255
+  path: C:\Users\morenodu\.hydromt_data\artifact_data\v0.0.6\gcn250\{variable}.tif
+gebco:
+  crs: 4326
+  data_type: RasterDataset
+  driver: raster
+  meta:
+    category: topography
+    paper_doi: 10.5285/a29c5465-b138-234d-e053-6c86abc040b9
+    paper_ref: Weatherall et al (2020)
+    source_license: https://www.gebco.net/data_and_products/gridded_bathymetry_data/#a1
+    source_url: https://www.bodc.ac.uk/data/open_download/gebco/gebco_2020/geotiff/
+    source_version: 2020
+    unit: m+MSL
+  path: C:\Users\morenodu\.hydromt_data\artifact_data\v0.0.6\gebco.tif
+gtsm_locations:
+  crs: 32633
+  data_type: GeoDataset
+  driver: vector
+  kwargs:
+    fn_data: C:\Users\morenodu\OneDrive - Stichting Deltares\Documents\GitHub\hydromt_sfincs\examples\data\gtsm_timeseries.csv
+  path: C:\Users\morenodu\OneDrive - Stichting Deltares\Documents\GitHub\hydromt_sfincs\examples\data\gtsm_locations.csv
+merit_hydro:
+  crs: 4326
+  data_type: RasterDataset
+  driver: raster
+  meta:
+    category: topography
+    paper_doi: 10.1029/2019WR024873
+    paper_ref: Yamazaki et al. (2019)
+    source_license: CC-BY-NC 4.0 or ODbL 1.0
+    source_url: http://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_Hydro
+    source_version: 1.0
+  path: C:\Users\morenodu\.hydromt_data\artifact_data\v0.0.6\merit_hydro\{variable}.tif
+osm_coastlines:
+  crs: 4326
+  data_type: GeoDataFrame
+  driver: vector
+  meta:
+    category: geography
+    source_author: OpenStreetMap
+    source_info: OpenStreetMap coastlines water polygons, last updated 2020-01-09T05:29
+    source_license: ODbL
+    source_url: https://osmdata.openstreetmap.de/data/coastlines.html
+    source_version: 1.0
+  path: C:\Users\morenodu\.hydromt_data\artifact_data\v0.0.6\osm_coastlines.gpkg
+vito:
+  crs: 4326
+  data_type: RasterDataset
+  driver: raster
+  meta:
+    category: landuse & landcover
+    paper_doi: 10.5281/zenodo.3939038
+    paper_ref: Buchhorn et al (2020)
+    source_url: https://land.copernicus.eu/global/products/lc
+    source_version: v2.0.2
+  path: C:\Users\morenodu\.hydromt_data\artifact_data\v0.0.6\vito.tif
